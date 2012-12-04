@@ -16,6 +16,6 @@ Simple bash script to set up my emacs environment
 ### Customize
     # Specify a directory for .el files
     # Note that this directory must be on your load-path
-    # See [this](http://emacswiki.org/emacs/LoadPath) for details
+    # See http://emacswiki.org/emacs/LoadPath for details
     $ ./emacs-setup -d/path/to/my/fav/emacs/dir
 
