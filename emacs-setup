@@ -34,9 +34,6 @@ do
         d ) EMACS_LOAD_DIR=$OPTARG
     esac
 done
-
-echo ${EMACS_LOAD_DIR}
-exit
 #
 ################################################################################
 #
