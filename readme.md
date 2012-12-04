@@ -13,10 +13,11 @@ Simple bash script to set up my emacs environment
 ### Usage
     $ ./emacs-setup
 
-### Customize
+### Options
+#### -d
 ##### Specify a directory for .el files
-    # Note that this directory must be on your load-path
-    # See http://emacswiki.org/emacs/LoadPath for details
-    # Default is /usr/share/emacs/site-lisp
+Note that this directory must be on your
+[load-path](http://emacswiki.org/emacs/LoadPath) for details.
+Default is /usr/share/emacs/site-lisp
     $ ./emacs-setup -d/path/to/my/fav/emacs/dir
 
