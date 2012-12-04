@@ -3,10 +3,40 @@
 # Emacs setup script.
 # Brian Sorahan 2012
 #
+# Setup my emacs environment without me having to lift a finger!
 #
+PWD=`pwd`
+#
+# URL we will use to fetch js2-mode.
+# This is a fork of mooz's repo with default indentation set to 2 spaces.
 #
 JS2_REPO="git://github.com/briansorahan/js2-mode.git"
+#
+# Default workgroup is relative to the emacs-setup repo
+#
+DEFAULT_WORKGROUP="workgroups/default"
+#
+# Directory where we will put .el files.
+# This can be overridden with the -d option, but *must* be on your
+# emacs load-path. 
+#
 EMACS_LOAD_DIR="/usr/share/emacs/site-lisp"
+#
+################################################################################
+#
+# Get command-line options
+#
+################################################################################
+#
+while getopts "d:" option
+do
+    case $option in
+        d ) EMACS_LOAD_DIR=$OPTARG
+    esac
+done
+
+echo ${EMACS_LOAD_DIR}
+exit
 #
 ################################################################################
 #
@@ -62,3 +92,5 @@ cd .. && rm -rf js2-mode
 cd ${EMACS_LOAD_DIR}
 wget http://www.emacswiki.org/emacs/download/dired-details.el
 wget http://www.emacswiki.org/emacs-en/download/dired-details%2b.el
+cd && mkdir -p .emacs.d/workgroups
+cd ${PWD} && 
