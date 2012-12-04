@@ -6,15 +6,20 @@
 # Setup my emacs environment without me having to lift a finger!
 #
 PWD=`pwd`
+TEMP=/tmp
 #
-# URL we will use to fetch js2-mode.
+# js2-mode repo
 # This is a fork of mooz's repo with default indentation set to 2 spaces.
 #
 JS2_REPO="git://github.com/briansorahan/js2-mode.git"
 #
+# workgroups repo
+#
+WORKGROUPS_REPO="git://github.com/tlh/workgroups.el.git"
+#
 # Default workgroup is relative to the emacs-setup repo
 #
-DEFAULT_WORKGROUP="workgroups/default"
+DEFAULT_WORKGROUP="${PWD}/workgroups/default"
 #
 # Directory where we will put .el files.
 # This can be overridden with the -d option, but *must* be on your
@@ -63,6 +68,7 @@ cat >~/.emacs <<DOT_EMACS
 ;; Workgroups
 (require 'workgroups)
 (workgroups-mode 1)
+(wg-load "${DEFAULT_WORKGROUP}")
 
 DOT_EMACS
 #
@@ -72,13 +78,27 @@ DOT_EMACS
 #
 ################################################################################
 #
-cd /tmp
+cd ${TEMP}
 git clone ${JS2_REPO}
 cd js2-mode
-emacs -f byte-compile js2-mode.el
+emacs --batch --eval '(byte-compile-file "js2-mode.el")'
 rm ${EMACS_LOAD_DIR}/js2-mode*
 cp js2-mode.elc ${EMACS_LOAD_DIR}
 cd .. && rm -rf js2-mode
+#
+################################################################################
+#
+# Setup workgroups
+#
+################################################################################
+#
+cd ${TEMP}
+git clone ${WORKGROUPS_REPO}
+cd workgroups.el
+emacs --batch --eval '(byte-compile-file "workgroups.el")'
+rm ${EMACS_LOAD_DIR}/workgroups*
+cp workgroups.elc ${EMACS_LOAD_DIR}
+cd .. && rm -rf workgroups.el
 #
 ################################################################################
 #
@@ -89,5 +109,5 @@ cd .. && rm -rf js2-mode
 cd ${EMACS_LOAD_DIR}
 wget http://www.emacswiki.org/emacs/download/dired-details.el
 wget http://www.emacswiki.org/emacs-en/download/dired-details%2b.el
-cd && mkdir -p .emacs.d/workgroups
-cd ${PWD} && 
+emacs --batch --eval '(byte-compile-file "dired-details.el")'
+emacs --batch --eval '(byte-compile-file "dired-details+.el")'
