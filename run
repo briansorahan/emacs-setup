@@ -3,6 +3,15 @@
 # Emacs setup script.
 # Brian Sorahan
 #
+# Warn the user of the dangers of running this script!
+#
+echo    "This script will completely overwrite your .emacs file!"
+echo -n "Would you like to continue? "
+read CONTINUE
+if [ ${CONTINUE:0:1} = "n" ] || [ ${CONTINUE:0:1} = "N" ]; then
+    exit
+fi
+#
 # Setup my emacs environment without me having to lift a finger!
 #
 PWD=`pwd`
@@ -88,6 +97,9 @@ ${KEY_BINDINGS}
 (require 'dired-details)
 (require 'dired-details+)
 
+;; buffer-move
+(require 'buffer-move)
+
 DOT_EMACS
 #
 ################################################################################
@@ -152,3 +164,13 @@ wget http://www.emacswiki.org/emacs/download/dired-details.el
 wget http://www.emacswiki.org/emacs-en/download/dired-details%2b.el
 emacs --batch --eval '(byte-compile-file "dired-details.el")'
 emacs --batch --eval '(byte-compile-file "dired-details+.el")'
+#
+################################################################################
+#
+# Setup buffer-move
+#
+################################################################################
+#
+cd ${EMACS_LOAD_DIR}
+wget http://www.emacswiki.org/emacs/download/buffer-move.el
+emacs --batch --eval '(byte-compile-file "buffer-move.el")'
