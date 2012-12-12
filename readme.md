@@ -16,8 +16,6 @@ Simple bash script to set up my emacs environment
 
 ## Install
     $ git clone git://github.com/briansorahan/emacs-setup.git
-
-## Usage
     $ cd emacs-setup
     $ ./run
 
