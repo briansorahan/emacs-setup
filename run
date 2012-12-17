@@ -133,6 +133,9 @@ ${KEY_BINDINGS}
                        (replace-regexp-in-string ".*1G\.\.\..*5G" "..."
                      (replace-regexp-in-string ".*1G.*3G" "&gt;" output))))))
 ;;
+;; chuck-mode
+(require 'chuck-mode)
+;;
 ;; additional configuration
 ;;
 ${CONF_EL}
@@ -238,3 +241,15 @@ cd ${EMACS_LOAD_DIR}
 rm -rf js-comint*
 wget http://downloads.sourceforge.net/js-comint-el/js-comint.el
 emacs --batch --eval '(byte-compile-file "js-comint.el")'
+#
+################################################################################
+#
+# Setup chuck-mode
+#
+################################################################################
+#
+cd ${EMACS_LOAD_DIR}
+rm -rf chuck-mode*
+wget http://www.mikael.johanssons.org/chuck.el
+mv chuck.el chuck-mode.el
+emacs --batch --eval '(byte-compile-file "chuck-mode.el")'
