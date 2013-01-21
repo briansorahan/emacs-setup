@@ -7,12 +7,15 @@
 main() {
 ### Warn the user of the dangers of running this script!
 
-    echo    "This script will completely overwrite your .emacs file!"
+    echo    "This script will backup your .emacs file (as .emacs.old) and create a new one!"
     echo -n "Would you like to continue? "
     read CONTINUE
     if [ ${CONTINUE:0:1} = "n" ] || [ ${CONTINUE:0:1} = "N" ]; then
 	exit
     fi
+
+# Backup the old .emacs file
+mv ~/.emacs ~/.emacs.old
 
 # Setup my emacs environment without me having to lift a finger!
 
