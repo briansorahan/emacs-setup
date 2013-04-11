@@ -116,6 +116,9 @@ ${KEY_BINDINGS}
 (require 'coffee-mode)
 (add-to-list 'auto-mode-alist '("coffee$" . coffee-mode))
 
+;; less-css-mode
+(require 'less-css-mode)
+
 ;; additional configuration
 
 ${CONF_EL}
