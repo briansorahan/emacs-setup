@@ -144,18 +144,21 @@ to the full path of `chuck' (i.e `c:\\chuck\\bin\\chuck.exe')"
 ;; Chuck editing enhancements
 ;; **************************************************
 
-(defun chuck-electric-equal-key (arg)
-  "Smart behaviour for = key. Inserts a chuck operator if pressed
-once and an == if pressed twice. With the C-u prefix inserts the
-upchuck operator."
-  (interactive "P")
-  (cond ((memq (char-before) '(?> ?< ?!))
-         (insert "="))
-        ((chuck-op-before?)
-         (progn (backward-delete-char 1)
-                (insert "=")))
-        ((and arg (listp arg)) (insert "=^"))
-        (t (insert "=>"))))
+;; electric-equal gets annoying.
+;; Especially when pasting code into a buffer! [bps]
+;;
+;; (defun chuck-electric-equal-key (arg)
+;;   "Smart behaviour for = key. Inserts a chuck operator if pressed
+;; once and an == if pressed twice. With the C-u prefix inserts the
+;; upchuck operator."
+;;   (interactive "P")
+;;   (cond ((memq (char-before) '(?> ?< ?!))
+;;          (insert "="))
+;;         ((chuck-op-before?)
+;;          (progn (backward-delete-char 1)
+;;                 (insert "=")))
+;;         ((and arg (listp arg)) (insert "=^"))
+;;         (t (insert "=>"))))
 
 (defun chuck-electric-close-block (n)
   "Automatically indent after typing a }"
