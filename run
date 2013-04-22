@@ -120,6 +120,9 @@ ${KEY_BINDINGS}
 ;; less-css-mode
 (require 'less-css-mode)
 
+;; quacks racket mode
+(require 'quack)
+
 ;; additional configuration
 
 ${CONF_EL}
