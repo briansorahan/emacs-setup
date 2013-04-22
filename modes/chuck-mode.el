@@ -190,7 +190,7 @@ to the full path of `chuck' (i.e `c:\\chuck\\bin\\chuck.exe')"
   (let ((chuck-mode-map (make-keymap)))
 	;; (define-key chuck-mode-map (kbd "<DEL>") 'chuck-delete-backward-char)
 	(define-key chuck-mode-map (kbd "}") 'chuck-electric-close-block)
-	(define-key chuck-mode-map (kbd "=") 'chuck-electric-equal-key)
+	;; (define-key chuck-mode-map (kbd "=") 'chuck-electric-equal-key)
     (define-key chuck-mode-map (kbd "<RET>") 'newline-and-indent)
 
 	(define-key chuck-mode-map [menu-bar chuck chuck-status]    
