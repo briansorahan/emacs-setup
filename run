@@ -128,6 +128,9 @@ ${KEY_BINDINGS}
 (require 'slime)
 (slime-setup)
 
+;; protobuf
+(require 'protobuf-mode)
+
 ;; additional configuration
 
 ${CONF_EL}
