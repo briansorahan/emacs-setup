@@ -103,6 +103,9 @@ ${KEY_BINDINGS}
 ;; protobuf
 (require 'protobuf-mode)
 
+;; go
+(require 'go-mode-load)
+
 ;; additional configuration
 
 ${CONF_EL}
