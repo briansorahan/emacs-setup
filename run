@@ -3,15 +3,20 @@
 # Emacs setup script.
 # Brian Sorahan
 
-main() {
+SILENT="n"
+
+function main {
+    local silent="$1"; shift
 	
     # Warn the user of the dangers of running this script!
-    echo -n "This script will backup your .emacs file"
-    echo " (as .emacs.old) and create a new one!"
-    echo -n "Would you like to continue? "
-    read CONTINUE
-    if [ ${CONTINUE:0:1} = "n" ] || [ ${CONTINUE:0:1} = "N" ]; then
-	    exit
+    if [ "$silent" = "n" ]; then
+        echo -n "This script will backup your .emacs file"
+        echo " (as .emacs.old) and create a new one!"
+        echo -n "Would you like to continue? "
+        read CONTINUE
+        if [ ${CONTINUE:0:1} = "n" ] || [ ${CONTINUE:0:1} = "N" ]; then
+	        exit
+        fi
     fi
 
     # Backup the old .emacs file
@@ -69,6 +74,10 @@ ${KEY_BINDINGS}
 (autoload 'js2-mode "js2-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
+
+;; tcl mode for expect
+(add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
+(add-to-list 'interpreter-mode-alist '("expect" . tcl-mode))
 
 ;; Workgroups
 ;; (require 'workgroups)
@@ -132,4 +141,12 @@ DOT_EMACS
     emacs --batch -f batch-byte-compile *.el
 }
 
-main "$@"
+echo "$1"
+case "$1" in
+    "-s")
+        SILENT=y
+        ;;
+esac
+
+echo "$SILENT"
+main "$SILENT" "$@"
