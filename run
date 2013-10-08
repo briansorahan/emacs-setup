@@ -142,12 +142,13 @@ DOT_EMACS
     emacs --batch -f batch-byte-compile *.el
 }
 
-echo "$1"
-case "$1" in
-    "-s")
-        SILENT=y
-        ;;
-esac
+# echo "$1"
+# case "$1" in
+#     "-s")
+#         SILENT=y
+#         ;;
+# esac
 
-echo "$SILENT"
+# echo "$SILENT"
+
 main "$SILENT" "$@"
