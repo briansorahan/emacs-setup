@@ -116,6 +116,9 @@ ${KEY_BINDINGS}
 ;; go
 (require 'go-mode-load)
 
+;; erlang
+(require 'erlang-start)
+
 ;; additional configuration
 
 ${CONF_EL}
