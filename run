@@ -119,6 +119,12 @@ ${KEY_BINDINGS}
 ;; erlang
 (require 'erlang-start)
 
+;; web-mode
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\\\.dtl\\\\'" . web-mode))
+(setq web-mode-engines-alist
+    '(("django"             . "\\\\.dtl\\\\'")))
+
 ;; additional configuration
 
 ${CONF_EL}
