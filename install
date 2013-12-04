@@ -115,14 +115,14 @@ ${KEY_BINDINGS}
 
 ;; web-mode
 (require 'web-mode)
-(add-to-list 'auto-mode-alist '("\\\\.dtl\\\\"            . web-mode))
-(add-to-list 'auto-mode-alist '("\\\\.html?\\\\'"         . web-mode))
-(add-to-list 'auto-mode-alist '("\\\\.php?\\\\'"          . web-mode))
-(add-to-list 'auto-mode-alist '("\\\\.css?\\\\'"          . web-mode))
+(add-to-list 'auto-mode-alist '(".dtl$"            . web-mode))
+(add-to-list 'auto-mode-alist '(".html$"         . web-mode))
+(add-to-list 'auto-mode-alist '(".php$"          . web-mode))
+(add-to-list 'auto-mode-alist '(".css$"          . web-mode))
 
 (setq web-mode-engines-alist
-    '(("django"               . "\\\\.dtl\\\\'")
-      ("underscorejs"         . "\\\\.html\\\\'")))
+    '(("django"               . ".dtl$")
+      ("underscorejs"         . ".html$")))
 
 ;; js2-mode
 (autoload 'js2-mode "js2-mode" nil t)
