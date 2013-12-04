@@ -121,9 +121,11 @@ ${KEY_BINDINGS}
 
 ;; web-mode
 (require 'web-mode)
-(add-to-list 'auto-mode-alist '("\\\\.dtl\\\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\\\.dtl\\\\" . web-mode))
+(add-to-list 'auto-mode-alist '("\\\\.html?\\\\'" . web-mode))
 (setq web-mode-engines-alist
-    '(("django"             . "\\\\.dtl\\\\'")))
+    '(("django"               . "\\\\.dtl\\\\'")
+      ("underscorejs"         . "\\\\.html\\\\'")))
 
 ;; additional configuration
 
