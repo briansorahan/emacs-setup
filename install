@@ -70,12 +70,6 @@ ${KEY_BINDINGS}
 ;; Add to load-path
 (add-to-list 'load-path "${EMACS_LOAD_DIR}")
 
-;; js2-mode
-(autoload 'js2-mode "js2-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
-(add-to-list 'interpreter-mode-alist '("node" . js2-mode))
-
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
 (add-to-list 'interpreter-mode-alist '("expect" . tcl-mode))
@@ -126,6 +120,12 @@ ${KEY_BINDINGS}
 (setq web-mode-engines-alist
     '(("django"               . "\\\\.dtl\\\\'")
       ("underscorejs"         . "\\\\.html\\\\'")))
+
+;; js2-mode
+(autoload 'js2-mode "js2-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
+(add-to-list 'interpreter-mode-alist '("node" . js2-mode))
 
 ;; additional configuration
 
