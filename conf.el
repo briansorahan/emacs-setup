@@ -2,3 +2,4 @@
 (setq tab-width 2)
 (setq default-tab-width 2)
 (defvaralias 'c-basic-offset 'tab-width)
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
