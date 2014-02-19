@@ -142,6 +142,10 @@ ${KEY_BINDINGS}
   '(lambda ()
      (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
 
+;; faust mode
+(setq auto-mode-alist (cons '("\\.dsp$" . faust-mode) auto-mode-alist))
+(autoload 'faust-mode "faust-mode" "FAUST editing mode." t)
+
 ;; additional configuration
 
 ${CONF_EL}
