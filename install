@@ -146,7 +146,20 @@ ${KEY_BINDINGS}
 (setq auto-mode-alist (cons '("\\.dsp$" . faust-mode) auto-mode-alist))
 (autoload 'faust-mode "faust-mode" "FAUST editing mode." t)
 
+;; pure-mode
+(require 'pure-mode)
+(setq auto-mode-alist (cons '("\\.pure\\(rc\\)?$" . pure-mode) auto-mode-alist))
+(add-hook 'pure-mode-hook 'turn-on-font-lock)
+(add-hook 'pure-eval-mode-hook 'turn-on-font-lock)
+
 ;; additional configuration
+
+;; indent java annotations properly
+(add-hook 'java-mode-hook
+    (lambda ()
+     "Treat Java 1.5 @-style annotations as comments."
+     (setq c-comment-start-regexp "(@|/(/|[*][*]?))")
+     (modify-syntax-entry ?@ "< b" java-mode-syntax-table)))
 
 ${CONF_EL}
 
