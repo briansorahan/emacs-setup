@@ -144,6 +144,7 @@ ${KEY_BINDINGS}
 
 ;; faust mode
 (setq auto-mode-alist (cons '("\\.dsp$" . faust-mode) auto-mode-alist))
+(setq auto-mode-alist (cons '("\\.lib$" . faust-mode) auto-mode-alist))
 (autoload 'faust-mode "faust-mode" "FAUST editing mode." t)
 
 ;; pure-mode
@@ -160,6 +161,13 @@ ${KEY_BINDINGS}
      "Treat Java 1.5 @-style annotations as comments."
      (setq c-comment-start-regexp "(@|/(/|[*][*]?))")
      (modify-syntax-entry ?@ "< b" java-mode-syntax-table)))
+
+;; create TAGS from within emacs
+(defun create-tags (dir-name)
+     "Create tags file."
+     (interactive "DDirectory: ")
+     (eshell-command 
+      (format "find %s -type f -name \"*.[ch]\" | etags -" dir-name)))
 
 ${CONF_EL}
 
