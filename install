@@ -153,6 +153,14 @@ ${KEY_BINDINGS}
 (add-hook 'pure-mode-hook 'turn-on-font-lock)
 (add-hook 'pure-eval-mode-hook 'turn-on-font-lock)
 
+;; sclang-mode
+(require 'sclang)
+
+;; clojure-mode
+(require 'clojure-mode)
+(setq auto-mode-alist (cons '("\\.clj$" . clojure-mode) auto-mode-alist))
+(add-hook 'clojure-mode-hook 'paredit-mode)
+
 ;; additional configuration
 
 ;; indent java annotations properly
@@ -191,6 +199,13 @@ DOT_EMACS
     rsync -ahurv ${MODES}/*.el ${EMACS_LOAD_DIR}
     cd ${EMACS_LOAD_DIR}
     emacs --batch -f batch-byte-compile *.el
+
+    local bash_rc=~/.bashrc
+    if [[ -f $bash_rc && -z $(grep 'alias em=' $bash_rc) ]]; then
+        echo "" >> $bash_rc
+        echo "alias em='emacs -nw'" >> $bash_rc
+        echo "added alias em='emacs -nw' to $bash_rc"
+    fi
 }
 
 # echo "$1"
