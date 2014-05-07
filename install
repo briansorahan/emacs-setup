@@ -130,15 +130,15 @@ ${KEY_BINDINGS}
       ("underscorejs"         . ".html$")))
 
 ;; js2-mode
-;; (autoload 'js2-mode "js2-mode" nil t)
-;; (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
-;; (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
-;; (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
+(autoload 'js2-mode "js2-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
+(add-to-list 'interpreter-mode-alist '("node" . js2-mode))
 
 ;; js3-mode
-(autoload 'js3-mode "js3" nil t)
-(add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
-(add-to-list 'interpreter-mode-alist '("node" . js2-mode))
+;; (autoload 'js3-mode "js3" nil t)
+;; (add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
+;; (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
 
 ;; yaml-mode
 (require 'yaml-mode)
