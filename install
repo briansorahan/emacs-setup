@@ -3,22 +3,7 @@
 # Emacs setup script.
 # Brian Sorahan
 
-SILENT="n"
-
 function main {
-    local silent="$1"; shift
-	
-    # Warn the user of the dangers of running this script!
-    if [ "$silent" = "n" ]; then
-        echo -n "This script will backup your .emacs file"
-        echo " (as .emacs.old) and create a new one!"
-        echo -n "Would you like to continue? "
-        read CONTINUE
-        if [ ${CONTINUE:0:1} = "n" ] || [ ${CONTINUE:0:1} = "N" ]; then
-	        exit
-        fi
-    fi
-
     # Backup the old .emacs file
     mv ~/.emacs ~/.emacs.old
 
@@ -213,13 +198,4 @@ DOT_EMACS
     fi
 }
 
-# echo "$1"
-# case "$1" in
-#     "-s")
-#         SILENT=y
-#         ;;
-# esac
-
-# echo "$SILENT"
-
-main "$SILENT" "$@"
+main "$@"
