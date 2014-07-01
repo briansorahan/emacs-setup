@@ -72,11 +72,11 @@ ${KEY_BINDINGS}
 (require 'buffer-move)
 
 ;; redo+
-(require 'redo+)
+;; (require 'redo+)
 
 ;; mac-key-mode
-(require 'mac-key-mode)
-(mac-key-mode 1)
+;; (require 'mac-key-mode)
+;; (mac-key-mode 1)
 
 ;; chuck-mode
 (require 'chuck-mode)
