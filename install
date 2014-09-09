@@ -18,7 +18,7 @@ function main {
     # Directory where we will put .el files.
     # This can be overridden with the -d option, but *must* be on your
     # emacs load-path. 
-    EMACS_LOAD_DIR=~/.emacs.d/site-lisp
+    EMACS_LOAD_DIR=~/emacs-setup/modes
 
     # Load key bindings from a file
     KEY_BINDINGS=`cat keybindings.el`
@@ -36,10 +36,6 @@ function main {
 	esac
     done
 
-    if [ ! -d ${EMACS_LOAD_DIR} ]; then
-	mkdir -p ${EMACS_LOAD_DIR}
-    fi
-
     ################################
     # Create the .emacs file
     ################################
@@ -54,6 +50,7 @@ ${KEY_BINDINGS}
 
 ;; Add to load-path
 (add-to-list 'load-path "${EMACS_LOAD_DIR}")
+(add-to-list 'load-path "${EMACS_LOAD_DIR}/haskell-mode")
 
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
@@ -78,6 +75,11 @@ ${KEY_BINDINGS}
 ;; (require 'mac-key-mode)
 ;; (mac-key-mode 1)
 
+;; packages
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+                         ("marmalade" . "http://marmalade-repo.org/packages/")
+                         ("melpa" . "http://melpa.milkbox.net/packages/")))
+
 ;; chuck-mode
 (require 'chuck-mode)
 
@@ -95,6 +97,10 @@ ${KEY_BINDINGS}
 (setq inferior-lisp-program "/usr/bin/sbcl")
 (require 'slime)
 (slime-setup)
+
+;; rust
+(autoload 'rust-mode "rust-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.rs$" . rust-mode))
 
 ;; protobuf
 (require 'protobuf-mode)
@@ -163,6 +169,11 @@ ${KEY_BINDINGS}
 ;; (setq auto-mode-alist (cons '("\\.clj$" . clojure-mode) auto-mode-alist))
 ;; (add-hook 'clojure-mode-hook 'paredit-mode)
 
+;; hsc3
+(add-to-list 'load-path "~/.cabal/share/hsc3-0.14/emacs")
+(setq hsc3-help-directory "~/.cabal/share/hsc3-0.14/Help")
+(require 'hsc3)
+
 ;; additional configuration
 
 ;; indent java annotations properly
@@ -198,9 +209,12 @@ DOT_EMACS
     ################################
     # Setup modes
     ################################
-    rsync -ahurv ${MODES}/*.el ${EMACS_LOAD_DIR}
+    # rsync -ahurv ${MODES}/*.el ${EMACS_LOAD_DIR}
     cd ${EMACS_LOAD_DIR}
     emacs --batch -f batch-byte-compile *.el
+    cd haskell-mode
+    make all
+    cd ..
 
     local bash_rc=~/.bashrc
     if [[ -f $bash_rc && -z $(grep 'alias em=' $bash_rc) ]]; then
