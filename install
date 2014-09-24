@@ -178,6 +178,10 @@ ${KEY_BINDINGS}
 (require 'jinja2-mode)
 (add-to-list 'auto-mode-alist '("\\.j2$" . jinja2-mode))
 
+;; dockerfile
+(require 'dockerfile-mode)
+(add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))
+
 ;; additional configuration
 
 ;; indent java annotations properly
