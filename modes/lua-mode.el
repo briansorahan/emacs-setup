@@ -106,6 +106,96 @@
   (require 'cl))
 
 (require 'comint)
+(require 'newcomment)
+(require 'rx)
+
+
+;; rx-wrappers for Lua
+
+(eval-and-compile
+  (defvar lua-rx-constituents)
+  (defvar rx-parent)
+
+  (defun lua-rx-to-string (form &optional no-group)
+    "Lua-specific replacement for `rx-to-string'.
+
+See `rx-to-string' documentation for more information FORM and
+NO-GROUP arguments."
+    (let ((rx-constituents lua-rx-constituents))
+      (rx-to-string form no-group)))
+
+  (defmacro lua-rx (&rest regexps)
+    "Lua-specific replacement for `rx'.
+
+See `rx' documentation for more information about REGEXPS param."
+    (cond ((null regexps)
+           (error "No regexp"))
+          ((cdr regexps)
+           (lua-rx-to-string `(and ,@regexps) t))
+          (t
+           (lua-rx-to-string (car regexps) t))))
+
+  (defun lua--new-rx-form (form)
+    "Add FORM definition to `lua-rx' macro.
+
+FORM is a cons (NAME . DEFN), see more in `rx-constituents' doc.
+This function enables specifying new definitions using old ones:
+if DEFN is a list that starts with `:rx' symbol its second
+element is itself expanded with `lua-rx-to-string'. "
+    (let ((name (car form))
+          (form-definition (cdr form)))
+      (when (and (listp form-definition) (eq ':rx (car form-definition)))
+        (setcdr form (lua-rx-to-string (cadr form-definition) 'nogroup)))
+      (push form lua-rx-constituents)))
+
+  (defun lua--rx-symbol (form)
+    ;; form is a list (symbol XXX ...)
+    ;; Skip initial 'symbol
+    (setq form (cdr form))
+    ;; If there's only one element, take it from the list, otherwise wrap the
+    ;; whole list into `(or XXX ...)' form.
+    (setq form (if (eq 1 (length form))
+                   (car form)
+                 (append '(or) form)))
+    (rx-form `(seq symbol-start ,form symbol-end) rx-parent))
+
+  (setq lua-rx-constituents (copy-sequence rx-constituents))
+
+  ;; group-n is not available in Emacs23, provide a fallback.
+  (unless (assq 'group-n rx-constituents)
+    (defun lua--rx-group-n (form)
+      (concat (format "\\(?%d:" (nth 1 form))
+              (rx-form `(seq ,@(nthcdr 2 form)) ':)
+              "\\)"))
+    (push '(group-n lua--rx-group-n 1 nil) lua-rx-constituents))
+
+  (mapc #'lua--new-rx-form
+        `((symbol lua--rx-symbol 1 nil)
+          (ws . "[ \t]*") (ws+ . "[ \t]+")
+          (lua-name :rx (symbol (regexp "[[:alpha:]_]+[[:alnum:]_]*")))
+          (lua-funcname
+           :rx (seq lua-name (* ws "." ws lua-name)
+                    (opt ws ":" ws lua-name)))
+          (lua-funcheader
+           ;; Outer (seq ...) is here to shy-group the definition
+           :rx (seq (or (seq (symbol "function") ws (group-n 1 lua-funcname))
+                        (seq (group-n 1 lua-funcname) ws "=" ws
+                             (symbol "function")))))
+          (lua-number
+           :rx (seq (or (seq (+ digit) (opt ".") (* digit))
+                        (seq (* digit) (opt ".") (+ digit)))
+                    (opt (regexp "[eE][+-]?[0-9]+"))))
+          (lua-assignment-op
+           :rx (seq "=" (or buffer-end (not (any "=")))))
+          (lua-token
+           :rx (or "+" "-" "*" "/" "%" "^" "#" "==" "~=" "<=" ">=" "<"
+                   ">" "=" ";" ":" "," "." ".." "..."))
+          (lua-keyword
+           :rx (symbol "and" "break" "do" "else" "elseif" "end"  "for" "function"
+                       "goto" "if" "in" "local" "not" "or" "repeat" "return"
+                       "then" "until" "while")))
+        ))
+
 
 (eval-and-compile
   ;; Backward compatibility for Emacsen < 24.1
@@ -193,7 +283,7 @@ for Emacsen that doesn't contain one (pre-23.3)."
   :type 'string
   :group 'lua)
 
-(defcustom lua-comment-start-skip "-- "
+(defcustom lua-comment-start-skip "---*[ \t]*"
   "Default value of `comment-start-skip'."
   :type 'string
   :group 'lua)
@@ -208,6 +298,7 @@ for Emacsen that doesn't contain one (pre-23.3)."
 Should be a list of strings."
   :type '(repeat string)
   :group 'lua)
+(make-variable-buffer-local 'lua-default-command-switches)
 
 (defcustom lua-always-show t
   "*Non-nil means display lua-process-buffer after sending a command."
@@ -292,7 +383,9 @@ If the latter is nil, the keymap translates into `lua-mode-map' verbatim.")
   :group 'lua)
 
 (defcustom lua-traceback-line-re
-  "^\\(?:[\t ]*\\|.*>[\t ]+\\)\\([^\n\t ]+\\):\\([0-9]+\\):"
+  ;; This regexp skips prompt and meaningless "stdin:N:" prefix when looking
+  ;; for actual file-line locations.
+  "^\\(?:[\t ]*\\|.*>[\t ]+\\)\\(?:stdin:[0-9]+:[\t ]*\\)?\\(?:stdin:[0-9]+:\\|\\([^\n\t ]*\\):\\([0-9]+\\):\\)"
   "Regular expression that describes tracebacks and errors."
   :type 'regexp
   :group 'lua)
@@ -488,41 +581,37 @@ Groups 6-9 can be used in any of argument regexps."
                 (re-search-forward "\\(?1:\\(?2:[^ \t]+\\)\\)" parse-stop 'skip)
                 (prog1 nil (goto-char end)))))))))
 
-(defconst lua-local-defun-regexp
-  ;; Function matchers are very crude, need rewrite at some point.
-  (rx (or (seq (regexp "\\(?:\\_<function\\_>\\)")
-               (* blank)
-               (? (regexp "\\(?1:\\_<[[:alpha:]][[:alnum:]]*\\_>\\)"))
-               (regexp "\\(?2:.*\\)"))
-          (seq (? (regexp "\\(?1:\\_<[[:alpha:]][[:alnum:]]*\\_>\\)"))
-               (* blank) "=" (* blank)
-               (regexp "\\(?:\\_<function\\_>\\)")
-               (regexp "\\(?2:.*\\)")))))
 
 (defvar lua-font-lock-keywords
   `(;; highlight the hash-bang line "#!/foo/bar/lua" as comment
     ("^#!.*$" . font-lock-comment-face)
 
     ;; Builtin constants
-    (,(rx symbol-start (or "true" "false" "nil") symbol-end)
+    (,(lua-rx (symbol "true" "false" "nil"))
      . font-lock-constant-face)
 
     ;; Keywords
-    (,(rx symbol-start
-          (or "and" "break" "do" "else" "elseif" "end"
-              "for" "function" "if" "in" "local" "not"
-              "or" "repeat" "return" "then" "until"
-              "while")
-          symbol-end)
+    (,(lua-rx lua-keyword)
      . font-lock-keyword-face)
+
+    ;; Labels used by the "goto" statement
+    ;; Highlights the following syntax:  ::label::
+    (,(lua-rx "::" ws lua-name ws "::")
+      . font-lock-constant-face)
+
+    ;; Hightlights the name of the label in the "goto" statement like
+    ;; "goto label"
+    (,(lua-rx (symbol (seq "goto" ws+ (group-n 1 lua-name))))
+      nil nil
+      (1 font-lock-constant-face))
 
     ;; Highlight lua builtin functions and variables
     (,lua--builtins
      (1 font-lock-builtin-face) (2 font-lock-builtin-face nil noerror))
 
     ("^[ \t]*\\_<for\\_>"
-     (,(lua-make-delimited-matcher "\\_<[[:alpha:]_][[:alnum:]_]*\\_>" ","
-                                   "\\(?:\\_<in\\_>\\|=\\(?:[^=]\\|$\\)\\)")
+     (,(lua-make-delimited-matcher (lua-rx lua-name) ","
+                                   (lua-rx (or (symbol "in") lua-assignment-op)))
       nil nil
       (1 font-lock-variable-name-face nil noerror)
       (2 font-lock-warning-face t noerror)
@@ -539,43 +628,33 @@ Groups 6-9 can be used in any of argument regexps."
     ("^[ \t]*\\_<local\\_>"
      (0 font-lock-keyword-face)
 
-     ((lambda (end)
-        (re-search-forward
-         (rx point (* blank) (regexp ,lua-local-defun-regexp)) end t))
+     ;; (* nonl) at the end is to consume trailing characters or otherwise they
+     ;; delimited matcher would attempt to parse them afterwards and wrongly
+     ;; highlight parentheses as incorrect variable name characters.
+     (,(lua-rx point ws lua-funcheader (* nonl))
       nil nil
       (1 font-lock-function-name-face nil noerror))
 
-     (,(lua-make-delimited-matcher "\\_<[[:alpha:]_][[:alnum:]_]*\\_>" "," 
-                                   "=\\(?:[^=]\\|$\\)")
+     (,(lua-make-delimited-matcher (lua-rx lua-name) ","
+                                   (lua-rx lua-assignment-op))
       nil nil
       (1 font-lock-variable-name-face nil noerror)
       (2 font-lock-warning-face t noerror)
       (3 font-lock-warning-face t noerror)))
 
-    ;; Function matchers are very crude, need rewrite at some point.
-    ;; Function name declarations.
-    ("^[ \t]*\\_<function\\_>[ \t]+\\([[:alnum:]_]+\\(?:\\.[[:alnum:]_]+\\)*\\(?::[[:alnum:]_]+\\)?\\)"
-     (1 font-lock-function-name-face))
-
-    ;; Function matchers are very crude, need rewrite at some point.
-    ;; Handle function names in assignments
-    ("^[ \t]*\\([[:alnum:]_]+\\(?:\\.[[:alnum:]_]+\\)*\\(?::[[:alnum:]_]+\\)?\\)[ \t]*=[ \t]*\\_<function\\_>"
+    (,(lua-rx (or bol ";") ws lua-funcheader)
      (1 font-lock-function-name-face)))
 
   "Default expressions to highlight in Lua mode.")
 
 (defvar lua-imenu-generic-expression
-  ;; This regexp matches expressions which look like function
-  ;; definitions, but are not necessarily allowed by Lua syntax.  This
-  ;; is done on purpose to avoid frustration when making a small error
-  ;; might cause a function get hidden from imenu index. --immerrr
-  '((nil "^[ \t]*\\(?:local[ \t]+\\)?function[ \t]+\\([[:alnum:]_:.]+\\)" 1)
-    (nil "^[ \t]*\\(?:local[ \t]+\\)?\\(\\_<[[:alnum:]_:.]+\\_>\\)[ \t]*=\[ \t]*\\_<function\\_>" 1))
+  `((nil ,(lua-rx (or bol ";") ws (opt (seq (symbol "local") ws)) lua-funcheader) 1))
   "Imenu generic expression for lua-mode.  See `imenu-generic-expression'.")
 
 (defvar lua-sexp-alist '(("then" . "end")
                          ("function" . "end")
-                         ("do" . "end")))
+                         ("do" . "end")
+                         ("repeat" . "until")))
 
 (defvar lua-mode-abbrev-table nil
   "Abbreviation table used in lua-mode buffers.")
@@ -593,17 +672,6 @@ Groups 6-9 can be used in any of argument regexps."
     '(("end"    "end"      lua-indent-line nil 'system)
       ("else"   "else"     lua-indent-line nil 'system)
       ("elseif" "elseif"   lua-indent-line nil 'system))))
-
-(eval-and-compile
-  (defalias 'lua-make-temp-file
-    (if (fboundp 'make-temp-file)
-        'make-temp-file
-      (lambda (prefix &optional dir-flag) ;; Simple implementation
-        (expand-file-name
-         (make-temp-name prefix)
-         (if (fboundp 'temp-directory)
-             (temp-directory)
-           temporary-file-directory))))))
 
 (defvar lua-mode-syntax-table
   (with-syntax-table (copy-syntax-table)
@@ -637,7 +705,6 @@ Groups 6-9 can be used in any of argument regexps."
   :group 'lua
 
   (setq comint-prompt-regexp lua-prompt-regexp)
-  (make-local-variable 'lua-default-command-switches)
   (set (make-local-variable 'font-lock-defaults)
        `(lua-font-lock-keywords ;; keywords
          nil                    ;; keywords-only
@@ -654,6 +721,8 @@ Groups 6-9 can be used in any of argument regexps."
          (indent-line-function          . lua-indent-line)
          (comment-start                 . ,lua-comment-start)
          (comment-start-skip            . ,lua-comment-start-skip)
+         (comment-use-syntax            . t)
+         (comment-use-global-state      . t)
          (imenu-generic-expression      . ,lua-imenu-generic-expression)))
 
   ;; setup menu bar entry (XEmacs style)
@@ -983,6 +1052,7 @@ TOKEN-TYPE determines where the token occurs on a statement. open indicates that
                               (eq match-type 'middle-or-open)
                               (eq found-type 'middle-or-open)
                               (eq match-type found-type))
+                          (goto-char found-pos)
                           (lua-find-matching-token-word found-token
                                                         search-direction)))
                     (when maybe-found-pos
@@ -1050,7 +1120,7 @@ Returns final value of point as integer or nil if operation failed."
 
 (eval-when-compile
   (defconst lua-operator-class
-    "-+*/^.=<>~"))
+    "-+*/^.=<>~:"))
 
 (defconst lua-cont-eol-regexp
   (eval-when-compile
@@ -1163,13 +1233,15 @@ use standalone."
 
    ;; block openers
    ((member found-token (list "{" "(" "["))
-	 (save-excursion
-	   ;; expression follows -> indent at start of next expression
-       ;; Last token on the line -> simple relative indent
-	   (if (and (not (search-forward-regexp "[[:space:]]--" (line-end-position) t))
-                (search-forward-regexp "[^[:space:]]" (line-end-position) t))
-           (cons 'absolute (1- (current-column)))
-         (cons 'relative lua-indent-level))))
+    (save-excursion
+      (let ((found-bol (line-beginning-position)))
+        (forward-comment (point-max))
+        ;; If the next token is on this line and it's not a block opener,
+        ;; the next line should align to that token.
+        (if (and (zerop (count-lines found-bol (line-beginning-position)))
+                 (not (looking-at lua-indentation-modifier-regexp)))
+            (cons 'absolute (current-column))
+          (cons 'relative lua-indent-level)))))
 
    ;; These are not really block starters. They should not add to indentation.
    ;; The corresponding "then" and "do" handle the indentation.
@@ -1235,14 +1307,14 @@ and the cdr of the replace-matching info is added in its place. This is used
 when a middle-of the block (the only case is 'else') is seen on the same line
 the block is opened."
   (cond
-   ( (listp (cdr-safe pair))
-     (nconc pair info))
    ( (eq 'remove-matching (car pair))
      ; Remove head of list
      (cdr info))
    ( (eq 'replace-matching (car pair))
      ; remove head of list, and add the cdr of pair instead
      (cons (cdr pair) (cdr info)))
+   ( (listp (cdr-safe pair))
+     (nconc pair info))
    ( t
      ; Just add the pair
      (cons pair info))))
@@ -1570,17 +1642,17 @@ When called interactively, switch to the process buffer."
       (accept-process-output (get-buffer-process (current-buffer)))
       (goto-char (point-max)))
     ;; send initialization code
-    (comint-simple-send nil lua-process-init-code)
+    (lua-send-string lua-process-init-code)
 
     ;; enable error highlighting in stack traces
     (require 'compile)
     (make-local-variable 'compilation-error-regexp-alist)
     (setq compilation-error-regexp-alist
-          (cons '("^\t*\\([^:\n]+\\):\\([^:\n]+\\):" 1 2)
+          (cons (list lua-traceback-line-re 1 2)
                 ;; Remove 'gnu entry from error regexp alist, it somehow forces
                 ;; leading TAB to be recognized as part of filename in Emacs23.
                 (delq 'gnu compilation-error-regexp-alist)))
-    (compilation-shell-minor-mode))
+    (compilation-shell-minor-mode 1))
 
   ;; when called interactively, switch to process buffer
   (if (lua--called-interactively-p 'any)
@@ -1594,7 +1666,7 @@ When called interactively, switch to the process buffer."
   lua-process)
 
 (defun lua-kill-process ()
-  "Kill lua subprocess and its buffer."
+  "Kill Lua subprocess and its buffer."
   (interactive)
   (if lua-process-buffer
       (kill-buffer lua-process-buffer)))
@@ -1609,8 +1681,14 @@ When called interactively, switch to the process buffer."
   (interactive)
   (set-marker lua-region-end (or arg (point))))
 
+(defun lua-send-string (str)
+  "Send STR plus a newline to Lua subprocess.
+
+If `lua-process' is nil or dead, start a new process first."
+  (comint-simple-send (lua-get-create-process) str))
+
 (defun lua-send-current-line ()
-  "Send current line to lua subprocess, found in `lua-process'.
+  "Send current line to Lua subprocess, found in `lua-process'.
 If `lua-process' is nil or dead, start a new process first."
   (interactive)
   (lua-send-region (line-beginning-position) (line-end-position)))
@@ -1657,7 +1735,6 @@ Otherwise, return START."
   (interactive "r")
   (setq start (lua-maybe-skip-shebang-line start))
   (let* ((lineno (line-number-at-pos start))
-         (lua-tempfile (lua-make-temp-file "lua-"))
          (lua-file (or (buffer-file-name) (buffer-name)))
          (region-str (buffer-substring-no-properties start end))
          (command
@@ -1665,7 +1742,7 @@ Otherwise, return START."
                   (lua-make-lua-string region-str)
                   (lua-make-lua-string lua-file)
                   lineno)))
-    (comint-simple-send (lua-get-create-process) command)
+    (lua-send-string command)
     (when lua-always-show (lua-show-process-buffer))))
 
 (defun lua-prompt-line ()
@@ -1705,10 +1782,17 @@ Otherwise, return START."
   (interactive)
   (delete-windows-on lua-process-buffer))
 
+(defun lua-funcname-at-point ()
+  "Get current Name { '.' Name } sequence."
+  ;; FIXME: copying/modifying syntax table for each call may incur a penalty
+  (with-syntax-table (copy-syntax-table)
+    (modify-syntax-entry ?. "_")
+    (current-word t)))
+
 (defun lua-search-documentation ()
   "Search Lua documentation for the word at the point."
   (interactive)
-  (browse-url (concat lua-search-url-prefix (current-word t))))
+  (browse-url (concat lua-search-url-prefix (lua-funcname-at-point))))
 
 (defun lua-toggle-electric-state (&optional arg)
   "Toggle the electric indentation feature.
@@ -1726,19 +1810,20 @@ left out."
 (defun lua-forward-sexp (&optional count)
   "Forward to block end"
   (interactive "p")
+  ;; negative offsets not supported
+  (assert (or (not count) (>= count 0)))
   (save-match-data
     (let* ((count (or count 1))
            (block-start (mapcar 'car lua-sexp-alist))
            (block-end (mapcar 'cdr lua-sexp-alist))
            (block-regex (regexp-opt (append  block-start block-end) 'words))
-           current-exp
-           )
+           current-exp)
       (while (> count 0)
         ;; skip whitespace
         (skip-chars-forward " \t\n")
         (if (looking-at (regexp-opt block-start 'words))
             (let ((keyword (match-string 1)))
-              (lua-find-matching-token-word keyword nil))
+              (lua-find-matching-token-word keyword 'forward))
           ;; If the current keyword is not a "begin" keyword, then just
           ;; perform the normal forward-sexp.
           (forward-sexp 1))
