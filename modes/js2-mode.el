@@ -84,7 +84,7 @@
           String SyntaxError TypeError URIError arguments
           decodeURI decodeURIComponent encodeURI
           encodeURIComponent escape eval isFinite isNaN
-          parseFloat parseInt undefined unescape))
+          parseFloat parseInt require undefined unescape))
 "Ecma-262 externs.  Included in `js2-externs' by default.")
 
 (defvar js2-browser-externs
@@ -6296,7 +6296,7 @@ Shown at or above `js2-highlight-level' 2.")
    "^"
    (regexp-opt
     '("decodeURI" "decodeURIComponent" "encodeURI" "encodeURIComponent"
-      "eval" "isFinite" "isNaN" "parseFloat" "parseInt") t)
+      "eval" "isFinite" "isNaN" "parseFloat" "parseInt" "require") t)
    "$")
   "Function properties of the Ecma-262 Global object.
 Shown at or above `js2-highlight-level' 2.")

@@ -132,7 +132,7 @@ ${KEY_BINDINGS}
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
 (setq js2-basic-offset 2)
-(setq js2-global-externs '("require" "module" "process" "console" "Buffer"))
+(setq js2-global-externs '("module" "process" "console" "Buffer"))
 
 (require 'json-snatcher)
 (require 'json-reformat)
@@ -221,9 +221,9 @@ DOT_EMACS
     rsync -ahurv ${MODES}/*.el ${EMACS_LOAD_DIR}
     cd ${EMACS_LOAD_DIR}
     emacs --batch -f batch-byte-compile *.el
-    cd haskell-mode
-    make all
-    cd ..
+    # cd haskell-mode
+    # make all
+    # cd ..
 
     local bash_rc=~/.bashrc
     if [[ -f $bash_rc && -z $(grep 'alias em=' $bash_rc) ]]; then
