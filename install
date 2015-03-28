@@ -50,7 +50,6 @@ ${KEY_BINDINGS}
 
 ;; Add to load-path
 (add-to-list 'load-path "${EMACS_LOAD_DIR}")
-(add-to-list 'load-path "${EMACS_LOAD_DIR}/haskell-mode")
 
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
@@ -106,7 +105,7 @@ ${KEY_BINDINGS}
 (require 'protobuf-mode)
 
 ;; go
-(require 'go-mode-load)
+(require 'go-mode-autoloads)
 
 ;; lua
 (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
@@ -169,11 +168,6 @@ ${KEY_BINDINGS}
 ;; (require 'clojure-mode)
 ;; (setq auto-mode-alist (cons '("\\.clj$" . clojure-mode) auto-mode-alist))
 ;; (add-hook 'clojure-mode-hook 'paredit-mode)
-
-;; hsc3
-(add-to-list 'load-path "~/.cabal/share/hsc3-0.14/emacs")
-(setq hsc3-help-directory "~/.cabal/share/hsc3-0.14/Help")
-(require 'hsc3)
 
 ;; jinja2
 (require 'jinja2-mode)
