@@ -106,6 +106,7 @@ ${KEY_BINDINGS}
 
 ;; go
 (require 'go-mode-autoloads)
+(add-hook 'before-save-hook #'gofmt-before-save)
 
 ;; lua
 (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
