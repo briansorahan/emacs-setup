@@ -5,7 +5,7 @@
 ;; license that can be found in the LICENSE file.
 
 ;; Author: The go-mode Authors
-;; Version: 1.2.0
+;; Version: 1.3.1
 ;; Keywords: languages go
 ;; URL: https://github.com/dominikh/go-mode.el
 ;;
@@ -764,8 +764,7 @@ that `font-lock-mode' gave to us."
             ((zerop i)
              nil)
             (t
-             (setcdr (nth i regions) nil)
-             regions)))))
+             (butlast regions (- (length regions) i)))))))
 
 (defun go--make-match-data (regions)
   (let ((deficit (- (* 2 go--font-lock-func-param-num-groups)
@@ -867,7 +866,7 @@ for `find-tag':
 Please note that godef is an external dependency. You can install
 it with
 
-go get code.google.com/p/rog-go/exp/cmd/godef
+go get github.com/rogpeppe/godef
 
 
 If you're looking for even more integration with Go, namely
@@ -1069,12 +1068,16 @@ you save any file, kind of defeating the point of autoloading."
   (with-current-buffer (process-buffer proc)
     (cond ((string= event "finished\n")  ;; Successful exit.
            (goto-char (point-min))
-           (view-mode 1)
+           (godoc-mode)
            (display-buffer (current-buffer) t))
           ((/= (process-exit-status proc) 0)  ;; Error exit.
            (let ((output (buffer-string)))
              (kill-buffer (current-buffer))
              (message (concat "godoc: " output)))))))
+
+(define-derived-mode godoc-mode special-mode "Godoc"
+  "Major mode for showing Go documentation."
+  (view-mode-enter))
 
 ;;;###autoload
 (defun godoc (query)
@@ -1354,12 +1357,12 @@ visit FILENAME and go to line LINE and column COLUMN."
     (let ((filename (match-string 1 specifier))
           (line (string-to-number (match-string 2 specifier)))
           (column (string-to-number (match-string 3 specifier))))
-      (with-current-buffer (funcall (if other-window #'find-file-other-window #'find-file) filename)
-        (go--goto-line line)
-        (beginning-of-line)
-        (forward-char (1- column))
-        (if (buffer-modified-p)
-            (message "Buffer is modified, file position might not have been correct"))))))
+      (funcall (if other-window #'find-file-other-window #'find-file) filename)
+      (go--goto-line line)
+      (beginning-of-line)
+      (forward-char (1- column))
+      (if (buffer-modified-p)
+          (message "Buffer is modified, file position might not have been correct")))))
 
 (defun godef--call (point)
   "Call godef, acquiring definition position and expression
