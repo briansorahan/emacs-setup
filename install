@@ -12,9 +12,6 @@ function main {
     TEMP=/tmp
     MODES=${PWD}/modes
 
-    # Default workgroup is relative to the emacs-setup repo
-    DEFAULT_WORKGROUP="${PWD}/workgroups/default.el"
-
     # Directory where we will put .el files.
     # This can be overridden with the -d option, but *must* be on your
     # emacs load-path. 
@@ -55,24 +52,8 @@ ${KEY_BINDINGS}
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
 (add-to-list 'interpreter-mode-alist '("expect" . tcl-mode))
 
-;; Workgroups
-;; (require 'workgroups)
-;; (workgroups-mode 1)
-;; (wg-load "${DEFAULT_WORKGROUP}")
-
-;; Dired-details
-;; (require 'dired-details)
-;; (require 'dired-details+)
-
 ;; buffer-move
 (require 'buffer-move)
-
-;; redo+
-;; (require 'redo+)
-
-;; mac-key-mode
-;; (require 'mac-key-mode)
-;; (mac-key-mode 1)
 
 ;; packages
 (setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
@@ -82,29 +63,16 @@ ${KEY_BINDINGS}
 ;; chuck-mode
 (require 'chuck-mode)
 
-;; coffee-mode
-(require 'coffee-mode)
-(add-to-list 'auto-mode-alist '("coffee$" . coffee-mode))
-
-;; less-css-mode
-;; (require 'less-css-mode)
-
-;; quacks racket mode
-(require 'quack)
-
 ;; slime
 (setq inferior-lisp-program "/usr/bin/sbcl")
 (require 'slime)
 (slime-setup)
 
-;; rust
-(autoload 'rust-mode "rust-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.rs$" . rust-mode))
-
 ;; protobuf
 (require 'protobuf-mode)
 
 ;; go
+(setq gofmt-command "goimports")
 (require 'go-mode-autoloads)
 (add-hook 'before-save-hook #'gofmt-before-save)
 
@@ -139,11 +107,6 @@ ${KEY_BINDINGS}
 (require 'json-mode)
 (add-to-list 'auto-mode-alist '("\\.json$" . json-mode))
 
-;; js3-mode
-;; (autoload 'js3-mode "js3" nil t)
-;; (add-to-list 'auto-mode-alist '("\\.js$" . js3-mode))
-;; (add-to-list 'interpreter-mode-alist '("node" . js2-mode))
-
 ;; yaml-mode
 (require 'yaml-mode)
 (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
@@ -155,20 +118,6 @@ ${KEY_BINDINGS}
 (setq auto-mode-alist (cons '("\\.dsp$" . faust-mode) auto-mode-alist))
 (setq auto-mode-alist (cons '("\\.lib$" . faust-mode) auto-mode-alist))
 (autoload 'faust-mode "faust-mode" "FAUST editing mode." t)
-
-;; pure-mode
-(require 'pure-mode)
-(setq auto-mode-alist (cons '("\\.pure\\(rc\\)?$" . pure-mode) auto-mode-alist))
-(add-hook 'pure-mode-hook 'turn-on-font-lock)
-(add-hook 'pure-eval-mode-hook 'turn-on-font-lock)
-
-;; sclang-mode
-;; (require 'sclang)
-
-;; clojure-mode
-;; (require 'clojure-mode)
-;; (setq auto-mode-alist (cons '("\\.clj$" . clojure-mode) auto-mode-alist))
-;; (add-hook 'clojure-mode-hook 'paredit-mode)
 
 ;; jinja2
 (require 'jinja2-mode)
