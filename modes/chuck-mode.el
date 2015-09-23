@@ -53,6 +53,24 @@
 ;; created for you.  To remove a shred from the VM press C-c C-d
 ;; (chuck-remove-code) and type the shred id on the Minibuffer.
 
+;;
+;; Modifications made by Brian Sorahan
+;;
+;; Sept 25, 2015 - Fixed errors
+
+;; In chuck-indent-line:
+;; chuck-mode.el:376:78:Warning: `default-tab-width' is an obsolete variable (as
+;; 																		   of 23.2); use `tab-width' instead.
+;; chuck-mode.el:382:78:Warning: `default-tab-width' is an obsolete variable (as
+;; 																		   of 23.2); use `tab-width' instead.
+;; chuck-mode.el:387:35:Warning: `default-tab-width' is an obsolete variable (as
+;; 																		   of 23.2); use `tab-width' instead.
+;;
+;; In chuck-mode:
+;; chuck-mode.el:414:9:Warning: `default-tab-width' is an obsolete variable (as
+;; 																		  of 23.2); use `tab-width' instead.
+;;
+
 ;;; Code:
 
 (require 'custom)
@@ -366,20 +384,20 @@ to the full path of `chuck' (i.e `c:\\chuck\\bin\\chuck.exe')"
 		  (progn
 			(save-excursion
 			  (forward-line -1)
-			  (setq cur-indent (- (current-indentation) default-tab-width)))
+			  (setq cur-indent (- (current-indentation) tab-width)))
 			(if (< cur-indent 0)
 				(setq cur-indent 0)))
 		(save-excursion
 		  (while not-indented
 			(forward-line -1)
 			(cond ((looking-at ".*{") ; In open block
-				   (setq cur-indent (+ (current-indentation) default-tab-width))
+				   (setq cur-indent (+ (current-indentation) tab-width))
 				   (setq not-indented nil))
 				  ((looking-at "[[:blank:]]*}") ; Closed block on blank line
 				   (setq cur-indent (current-indentation))
 				   (setq not-indented nil))
 				  ((looking-at ".*}") ; Closed block on non-blank line
-				   (setq cur-indent (- (current-indentation) default-tab-width))
+				   (setq cur-indent (- (current-indentation) tab-width))
 				   (setq not-indented nil))
 				  ((bobp)
 				   (setq not-indented nil))))))
@@ -411,7 +429,7 @@ to the full path of `chuck' (i.e `c:\\chuck\\bin\\chuck.exe')"
   
   (setq major-mode 'chuck-mode)
   (setq mode-name "ChucK")
-  (setq default-tab-width 4)
+  (setq tab-width 4)
   (run-hooks 'chuck-mode-hook))
 
 (provide 'chuck-mode)

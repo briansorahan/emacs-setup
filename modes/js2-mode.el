@@ -62,6 +62,19 @@
 ;; This means that `js2-mode' is currently only useful for editing JavaScript
 ;; files, and not for editing JavaScript within <script> tags or templates.
 
+;; Modifications by Brian Sorahan
+;;
+;; Sept 25, 2015 - Fixed the following errors
+;;
+;; In js2-mode-toggle-warnings-and-errors:
+;; js2-mode.el:11438:44:Warning: `interactive-p' is an obsolete function (as of
+;; 																		  23.2); use `called-interactively-p' instead.
+
+;; In end of data:
+;; js2-mode.el:11751:1:Warning: the function `js2-echo-help' is not known to be
+;; defined.
+;;
+
 ;;; Code:
 
 (eval-when-compile
@@ -4930,6 +4943,17 @@ appearing in a statement context will have a parent that is a
                           'FUNCTION_EXPRESSION))))
         parent
       (js2-node-parent-stmt parent))))
+
+;; BRIAN: moved this here from ~L10000
+(defun js2-echo-error (old-point new-point)
+  "Called by point-motion hooks."
+  (let ((msg (get-text-property new-point 'help-echo)))
+    (if (and msg (or (not (current-message))
+                     (string= (current-message) "Quit")))
+        (message msg))))
+
+;; BRIAN: moved this here from ~L10000
+(defalias #'js2-echo-help #'js2-echo-error)
 
 ;; In the Mozilla Rhino sources, Roshan James writes:
 ;;  Does consistent-return analysis on the function body when strict mode is
@@ -10777,15 +10801,6 @@ This ensures that the counts and `next-error' are correct."
     (dolist (e (js2-ast-root-warnings js2-mode-ast))
       (js2-mode-show-warn-or-err e 'js2-warning-face))))
 
-(defun js2-echo-error (old-point new-point)
-  "Called by point-motion hooks."
-  (let ((msg (get-text-property new-point 'help-echo)))
-    (if (and msg (or (not (current-message))
-                     (string= (current-message) "Quit")))
-        (message msg))))
-
-(defalias #'js2-echo-help #'js2-echo-error)
-
 (defun js2-enter-key ()
   "Handle user pressing the Enter key."
   (interactive)
@@ -11436,7 +11451,7 @@ Some users don't like having warnings/errors reported while they type."
   (interactive)
   (setq js2-mode-show-parse-errors (not js2-mode-show-parse-errors)
         js2-mode-show-strict-warnings (not js2-mode-show-strict-warnings))
-  (if (interactive-p)
+  (if (called-interactively-p 'any)
       (message "warnings and errors %s"
                (if js2-mode-show-parse-errors
                    "enabled"

@@ -35,70 +35,53 @@
 
 ;; This field is expanded to commit SHA, date & associated heads/tags during
 ;; archive creation.
-;; Revision: $Format:%h (%cD %d)$
+;; Revision: 37f3c42 (Wed, 5 Aug 2015 09:02:30 +0300  (HEAD -> master))
 ;;
 
 ;;; Commentary:
 
-;; Thanks to d87 <github.com/d87> for an idea of highlighting lua
-;; builtins/numbers
+;; lua-mode provides support for editing Lua, including automatical
+;; indentation, syntactical font-locking, running interactive shell,
+;; interacting with `hs-minor-mode' and online documentation lookup.
 
-;; Thanks to Vedat Hallac <github.com/vhallac> for sharing some of
-;; his fixes and updates to core indentation logics
+;; The following variables are available for customization (see more via
+;; `M-x customize-group lua`):
 
-;; Thanks to Rafael Sanchez <rafael@cornerdimension.com> for patch
-;; adding lua-mode to interpreter-mode-alist
+;; - Var `lua-indent-level':
+;;   indentation offset in spaces
+;; - Var `lua-indent-string-contents':
+;;   set to `t` if you like to have contents of multiline strings to be
+;;   indented like comments
+;; - Var `lua-mode-hook':
+;;   list of functions to execute when lua-mode is initialized
+;; - Var `lua-documentation-url':
+;;   base URL for documentation lookup
+;; - Var `lua-documentation-function': function used to
+;;   show documentation (`eww` is a viable alternative for Emacs 25)
 
-;; Thanks to Leonardo Etcheverry <leo@kalio.net> for enabling
-;; narrow-to-defun functionality
+;; These are variables/commands that operate on Lua subprocess:
 
-;; Thanks to Tobias Polzin <polzin@gmx.de> for function indenting
-;; patch: Indent "(" like "{"
+;; - Var `lua-default-application':
+;;   command to start up the subprocess (REPL)
+;; - Var `lua-default-command-switches':
+;;   arguments to pass to the subprocess on startup (make sure `-i` is there
+;;   if you expect working with Lua shell interactively)
+;; - Cmd `lua-start-process': start new REPL process, usually happens automatically
+;; - Cmd `lua-kill-process': kill current REPL process
 
-;; Thanks to Fabien <fleutot@gmail.com> for imenu patches.
+;; These are variables/commands for interaction with Lua subprocess:
 
-;; Thanks to Simon Marshall <simonm@mail.esrin.esa.it> and Olivier
-;; Andrieu <oandrieu@gmail.com> for font-lock patches.
+;; - Cmd `lua-show-process-buffer': switch to REPL buffer
+;; - Cmd `lua-hide-process-buffer': hide window showing REPL buffer
+;; - Var `lua-always-show': show REPL buffer after sending something
+;; - Cmd `lua-send-buffer': send whole buffer
+;; - Cmd `lua-send-current-line': send current line
+;; - Cmd `lua-send-defun': send current top-level function
+;; - Cmd `lua-send-region': send active region
+;; - Cmd `lua-restart-with-whole-file': restart REPL and send whole buffer
 
-;; Additional font-lock highlighting and indentation tweaks by
-;; Adam D. Moss <adam@gimp.org>.
-
-;; INSTALLATION:
-
-;; To install, just copy this file into a directory on your load-path
-;; (and byte-compile it). To set up Emacs to automatically edit files
-;; ending in ".lua" or with a lua hash-bang line using lua-mode add
-;; the following to your init file:
-;;
-;; (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
-;; (add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
-;; (add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
-
-;; Usage
-
-;; Lua-mode supports c-mode style formatting and sending of
-;; lines/regions/files to a Lua interpreter. An interpreter (see
-;; variable `lua-default-application') will be started if you try to
-;; send some code and none is running. You can use the process-buffer
-;; (named after the application you chose) as if it were an
-;; interactive shell. See the documentation for `comint.el' for
-;; details.
-
-;; Lua-mode works with Hide Show minor mode (see ``hs-minor-mode``).
-
-;; Key-bindings
-
-;; To see all the keybindings for Lua mode, look at `lua-setup-keymap'
-;; or start `lua-mode' and type `\C-h m'.
-;; The keybindings may seem strange, since I prefer to use them with
-;; lua-prefix-key set to nil, but since those keybindings are already used
-;; the default for `lua-prefix-key' is `\C-c', which is the conventional
-;; prefix for major-mode commands.
-
-;; You can customise the keybindings either by setting `lua-prefix-key'
-;; or by putting the following in your .emacs
-;;      (define-key lua-mode-map <your-key> <function>)
-;; for all the functions you need.
+;; See "M-x apropos-command ^lua-" for a list of commands.
+;; See "M-x customize-group lua" for a list of customizable variables.
 
 
 ;;; Code:
@@ -111,6 +94,11 @@
 
 
 ;; rx-wrappers for Lua
+
+(eval-when-compile
+  ;; Silence compilation warning about `compilation-error-regexp-alist' defined
+  ;; in compile.el.
+  (require 'compile))
 
 (eval-and-compile
   (defvar lua-rx-constituents)
@@ -198,6 +186,11 @@ element is itself expanded with `lua-rx-to-string'. "
 
 
 (eval-and-compile
+  (if (fboundp 'setq-local)
+      (defalias 'lua--setq-local 'setq-local)
+    (defmacro lua--setq-local (var val)
+      `(set (make-local-variable (quote ,var)) ,val)))
+
   ;; Backward compatibility for Emacsen < 24.1
   (defalias 'lua--prog-mode
     (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
@@ -207,47 +200,6 @@ element is itself expanded with `lua-rx-to-string'. "
 
   (defalias 'lua--cl-labels
     (if (fboundp 'cl-labels) 'cl-labels 'flet))
-
-  ;; for Emacsen < 22.1
-  (defalias 'lua--with-no-warnings
-    (if (fboundp 'with-no-warnings) 'with-no-warnings 'progn))
-
-  ;; provide backward compatibility for Emacs < 23.2
-  ;; called-interactively-p receives an argument starting from Emacs 23.2
-  ;; In Emacs 22 & Emacs 23.1 it didn't expect an argument
-  ;; In Emacs 21 it was called interactively-p
-  (condition-case nil
-      (progn (called-interactively-p nil)
-             ;; if first call succeeds, make lua-called-interactively-p an alias
-             (defalias 'lua--called-interactively-p 'called-interactively-p))
-
-    (wrong-number-of-arguments
-     ;; wrong number of arguments means it's 22.1 <= Emacs < 23.2
-     ;;
-     ;; Newer and smarter Emacsen will warn about obsolete functions
-     ;; and/or wrong number of arguments. Turning these warnings off,
-     ;; since it's backward-compatibility-oriented code anyway.
-     (lua--with-no-warnings
-       (defun lua--called-interactively-p (kind)
-         "Return t if containing function was called interactively.
-
-This function provides lua-mode backward compatibility for
-pre-23.2 Emacsen."
-         (if (eq kind 'interactive)
-             (interactive-p)
-           (called-interactively-p)))))
-
-    ;; if not, it's probably < 22.1, provide partial compatibility
-    ;;
-    ;; Once again, turning obsolete-function warnings off (see above).
-    (error
-     (lua--with-no-warnings
-       (defun lua--called-interactively-p (&rest opts)
-         "Return t if containing function was called interactively.
-
-This function provides lua-mode backward compatibility for pre-22
-Emacsen."
-         (interactive-p)))))
 
   ;; backward compatibility for Emacsen < 23.3
   ;; Emacs 23.3 introduced with-silent-modifications macro
@@ -305,8 +257,19 @@ Should be a list of strings."
   :type 'boolean
   :group 'lua)
 
-(defcustom lua-search-url-prefix "http://www.lua.org/manual/5.1/manual.html#pdf-"
-  "*URL at which to search for documentation on a word"
+(defcustom lua-documentation-function 'browse-url
+  "Function used to fetch the Lua reference manual."
+  :type `(radio (function-item browse-url)
+                ,@(when (fboundp 'eww) '((function-item eww)))
+                ,@(when (fboundp 'w3m-browse-url) '((function-item w3m-browse-url)))
+                (function :tag "Other function"))
+  :group 'lua)
+
+(defcustom lua-documentation-url
+  (or (and (file-readable-p "/usr/share/doc/lua/manual.html")
+           "file:///usr/share/doc/lua/manual.html")
+      "http://www.lua.org/manual/5.1/manual.html")
+  "URL pointing to the Lua reference manual."
   :type 'string
   :group 'lua)
 
@@ -385,10 +348,46 @@ If the latter is nil, the keymap translates into `lua-mode-map' verbatim.")
 (defcustom lua-traceback-line-re
   ;; This regexp skips prompt and meaningless "stdin:N:" prefix when looking
   ;; for actual file-line locations.
-  "^\\(?:[\t ]*\\|.*>[\t ]+\\)\\(?:stdin:[0-9]+:[\t ]*\\)?\\(?:stdin:[0-9]+:\\|\\([^\n\t ]*\\):\\([0-9]+\\):\\)"
+  "^\\(?:[\t ]*\\|.*>[\t ]+\\)\\(?:[^\n\t ]+:[0-9]+:[\t ]*\\)*\\(?:\\([^\n\t ]+\\):\\([0-9]+\\):\\)"
   "Regular expression that describes tracebacks and errors."
   :type 'regexp
   :group 'lua)
+
+(defvar lua--repl-buffer-p nil
+  "Buffer-local flag saying if this is a Lua REPL buffer.")
+(make-variable-buffer-local 'lua--repl-buffer-p)
+
+
+(defadvice compilation-find-file (around lua--repl-find-file
+                                         (marker filename directory &rest formats)
+                                         activate)
+  "Return Lua REPL buffer when looking for \"stdin\" file in it."
+  (if (and
+       lua--repl-buffer-p
+       (string-equal filename "stdin")
+       ;; NOTE: this doesn't traverse `compilation-search-path' when
+       ;; looking for filename.
+       (not (file-exists-p (expand-file-name
+                        filename
+                        (when directory (expand-file-name directory))))))
+      (setq ad-return-value (current-buffer))
+    ad-do-it))
+
+
+(defadvice compilation-goto-locus (around lua--repl-goto-locus
+                                          (msg mk end-mk)
+                                          activate)
+  "When message points to Lua REPL buffer, go to the message itself.
+Usually, stdin:XX line number points to nowhere."
+  (let ((errmsg-buf (marker-buffer msg))
+        (error-buf (marker-buffer mk)))
+    (if (and (with-current-buffer errmsg-buf lua--repl-buffer-p)
+             (eq error-buf errmsg-buf))
+        (progn
+          (compilation-set-window (display-buffer (marker-buffer msg)) msg)
+          (goto-char msg))
+      ad-do-it)))
+
 
 (defcustom lua-indent-string-contents nil
   "If non-nil, contents of multiline string will be indented.
@@ -446,7 +445,8 @@ traceback location."
             "type" "unpack" "xpcall" "self"
             ("bit32" . ("arshift" "band" "bnot" "bor" "btest" "bxor" "extract"
                         "lrotate" "lshift" "replace" "rrotate" "rshift"))
-            ("coroutine" . ("create" "resume" "running" "status" "wrap" "yield"))
+            ("coroutine" . ("create" "isyieldable" "resume" "running" "status"
+                            "wrap" "yield"))
             ("debug" . ("debug" "getfenv" "gethook" "getinfo" "getlocal"
                         "getmetatable" "getregistry" "getupvalue" "getuservalue"
                         "setfenv" "sethook" "setlocal" "setmetatable"
@@ -456,16 +456,20 @@ traceback location."
                      "read" "stderr" "stdin" "stdout" "tmpfile" "type" "write"))
             ("math" . ("abs" "acos" "asin" "atan" "atan2" "ceil" "cos" "cosh"
                        "deg" "exp" "floor" "fmod" "frexp" "huge" "ldexp" "log"
-                       "log10" "max" "min" "modf" "pi" "pow" "rad" "random"
-                       "randomseed" "sin" "sinh" "sqrt" "tan" "tanh"))
+                       "log10" "max" "maxinteger" "min" "mininteger" "modf" "pi"
+                       "pow" "rad" "random" "randomseed" "sin" "sinh" "sqrt"
+                       "tan" "tanh" "tointeger" "type" "ult"))
             ("os" . ("clock" "date" "difftime" "execute" "exit" "getenv"
                      "remove"  "rename" "setlocale" "time" "tmpname"))
             ("package" . ("config" "cpath" "loaded" "loaders" "loadlib" "path"
                           "preload" "searchers" "searchpath" "seeall"))
             ("string" . ("byte" "char" "dump" "find" "format" "gmatch" "gsub"
-                         "len" "lower" "match" "rep" "reverse" "sub" "upper"))
-            ("table" . ("concat" "insert" "maxn" "pack" "remove" "sort" "unpack"
-                        )))))
+                         "len" "lower" "match" "pack" "packsize" "rep" "reverse"
+                         "sub" "unpack" "upper"))
+            ("table" . ("concat" "insert" "maxn" "move" "pack" "remove" "sort"
+                        "unpack"))
+            ("utf8" . ("char" "charpattern" "codepoint" "codes" "len"
+                       "offset")))))
 
       (lua--cl-labels
        ((module-name-re (x)
@@ -497,7 +501,7 @@ traceback location."
 
   "A regexp that matches lua builtin functions & variables.
 
-This is a compilation of 5.1 and 5.2 builtins taken from the
+This is a compilation of 5.1, 5.2 and 5.3 builtins taken from the
 index of respective Lua reference manuals.")
 
 (eval-and-compile
@@ -703,27 +707,35 @@ Groups 6-9 can be used in any of argument regexps."
   :abbrev-table lua-mode-abbrev-table
   :syntax-table lua-mode-syntax-table
   :group 'lua
-
   (setq comint-prompt-regexp lua-prompt-regexp)
-  (set (make-local-variable 'font-lock-defaults)
-       `(lua-font-lock-keywords ;; keywords
-         nil                    ;; keywords-only
-         nil                    ;; case-fold
-         nil                    ;; syntax-alist
-         nil                    ;; syntax-begin
-         ;; initialize font-lock buffer-local variables
-         (font-lock-syntactic-keywords  . lua-font-lock-syntactic-keywords)
-         (font-lock-extra-managed-props . (syntax-table))
-         (parse-sexp-lookup-properties  . t)
-         ;; initialize the rest of buffer-local variables
-         (beginning-of-defun-function   . lua-beginning-of-proc)
-         (end-of-defun-function         . lua-end-of-proc)
-         (indent-line-function          . lua-indent-line)
-         (comment-start                 . ,lua-comment-start)
-         (comment-start-skip            . ,lua-comment-start-skip)
-         (comment-use-syntax            . t)
-         (comment-use-global-state      . t)
-         (imenu-generic-expression      . ,lua-imenu-generic-expression)))
+
+
+  (lua--setq-local font-lock-defaults '(lua-font-lock-keywords ;; keywords
+                                        nil                    ;; keywords-only
+                                        nil                    ;; case-fold
+                                        nil                    ;; syntax-alist
+                                        nil                    ;; syntax-begin
+                                        ))
+
+  (if (boundp 'syntax-propertize-function)
+      (lua--setq-local syntax-propertize-function
+                       'lua--propertize-multiline-bounds)
+    (with-no-warnings
+      ;; font-lock-syntactic-keywords are deprecated since 24.1
+      (lua--setq-local
+       font-lock-syntactic-keywords 'lua-font-lock-syntactic-keywords)))
+  (lua--setq-local font-lock-extra-managed-props  '(syntax-table))
+  (lua--setq-local parse-sexp-lookup-properties   t)
+  (lua--setq-local indent-line-function           'lua-indent-line)
+  (lua--setq-local beginning-of-defun-function    'lua-beginning-of-proc)
+  (lua--setq-local end-of-defun-function          'lua-end-of-proc)
+  (lua--setq-local comment-start                  lua-comment-start)
+  (lua--setq-local comment-start-skip             lua-comment-start-skip)
+  (lua--setq-local comment-use-syntax             t)
+  (with-no-warnings
+    (lua--setq-local comment-use-global-state     t))
+  (lua--setq-local imenu-generic-expression       lua-imenu-generic-expression)
+
 
   ;; setup menu bar entry (XEmacs style)
   (if (and (featurep 'menubar)
@@ -746,6 +758,7 @@ Groups 6-9 can be used in any of argument regexps."
                    ,(regexp-opt (mapcar 'car lua-sexp-alist) 'words) ;start
                    ,(regexp-opt (mapcar 'cdr lua-sexp-alist) 'words) ;end
                    nil lua-forward-sexp))))
+
 
 
 ;;;###autoload
@@ -795,10 +808,6 @@ This function replaces previous prefix-key binding with a new one."
 
 If point is not inside a comment, return nil."
   (and parsing-state (nth 4 parsing-state) (nth 8 parsing-state)))
-
-(defun lua-comment-p (&optional pos)
-  "Returns true if the point is in a comment."
-  (save-excursion (elt (syntax-ppss pos) 4)))
 
 (defun lua-comment-or-string-p (&optional pos)
   "Returns true if the point is in a comment or string."
@@ -871,10 +880,39 @@ If none can be found before reaching LIMIT, return nil."
   (or (lua-try-match-multiline-end limit)
       (lua-try-match-multiline-begin limit)))
 
+(defun lua-remove-syntax-table-property (limit)
+  "Remove syntax-table property on given region.
+
+This is a workaround for `font-lock-default-fontify-region'
+sometimes forgetting to unpropertize region which may cause
+multiline recognition to fail.
+
+Returns nil so that it's only called once as a syntactic keyword.
+"
+  (remove-text-properties (point) limit '(syntax-table))
+  nil)
+
 (defvar lua-font-lock-syntactic-keywords
-  '((lua-match-multiline-literal-bounds
+  '((lua-remove-syntax-table-property nil)
+    (lua-match-multiline-literal-bounds
      (1 "!" nil noerror)
      (2 "|" nil noerror))))
+
+
+(defun lua--propertize-multiline-bounds (start end)
+  "Put text properties on beginnings and ends of multiline literals.
+
+Intended to be used as a `syntax-propertize-function'."
+  (save-excursion
+    (goto-char start)
+    (while (lua-match-multiline-literal-bounds end)
+      (when (match-beginning 1)
+        (put-text-property (match-beginning 1) (match-end 1)
+                           'syntax-table (string-to-syntax "!")))
+      (when (match-beginning 2)
+        (put-text-property (match-beginning 2) (match-end 2)
+                           'syntax-table (string-to-syntax "|"))))))
+
 
 (defun lua-indent-line ()
   "Indent current line for Lua mode.
@@ -1120,18 +1158,21 @@ Returns final value of point as integer or nil if operation failed."
 
 (eval-when-compile
   (defconst lua-operator-class
-    "-+*/^.=<>~:"))
+    "-+*/^.=<>~:&|"))
 
 (defconst lua-cont-eol-regexp
   (eval-when-compile
     (concat
      "\\(\\_<"
      (regexp-opt '("and" "or" "not" "in" "for" "while"
-                   "local" "function" "if" "until" "elseif" "return") t)
+                   "local" "function" "if" "until" "elseif" "return")
+                 t)
      "\\_>\\|"
      "\\(^\\|[^" lua-operator-class "]\\)"
      (regexp-opt '("+" "-" "*" "/" "%" "^" ".." "=="
-                   "=" "<" ">" "<=" ">=" "~=" "." ":" ) t)
+                   "=" "<" ">" "<=" ">=" "~=" "." ":"
+                   "&" "|" "~" ">>" "<<" "~")
+                 t)
      "\\)"
      "\\s *\\="))
   "Regexp that matches the ending of a line that needs continuation
@@ -1148,7 +1189,9 @@ an optional whitespace till the end of the line.")
      (regexp-opt '("and" "or" "not") t)
      "\\_>\\|"
      (regexp-opt '("+" "-" "*" "/" "%" "^" ".." "=="
-                   "=" "<" ">" "<=" ">=" "~=" "." ":") t)
+                   "=" "<" ">" "<=" ">=" "~=" "." ":"
+                   "&" "|" "~" ">>" "<<" "~")
+                 t)
      "\\($\\|[^" lua-operator-class "]\\)"
      "\\)"))
   "Regexp that matches a line that continues previous one
@@ -1540,6 +1583,11 @@ If not, return nil."
        ;; 4. if there's no previous line, indentation is 0
        0))))
 
+(defvar lua--beginning-of-defun-re
+  (lua-rx-to-string '(: bol (? (symbol "local") ws+) lua-funcheader))
+  "Lua top level (matches only at the beginning of line) function header regex.")
+
+
 (defun lua-beginning-of-proc (&optional arg)
   "Move backward to the beginning of a lua proc (or similar).
 
@@ -1551,11 +1599,11 @@ Returns t unless search stops due to beginning or end of buffer."
   (or arg (setq arg 1))
 
   (while (and (> arg 0)
-              (re-search-backward "^function[ \t]" nil t))
+              (re-search-backward lua--beginning-of-defun-re nil t))
     (setq arg (1- arg)))
 
   (while (and (< arg 0)
-              (re-search-forward "^function[ \t]" nil t))
+              (re-search-forward lua--beginning-of-defun-re nil t))
     (beginning-of-line)
     (setq arg (1+ arg)))
 
@@ -1599,7 +1647,8 @@ This function just searches for a `end' at the beginning of a line."
 (defvar lua-process-init-code
   (mapconcat
    'identity
-   '("function luamode_loadstring(str, displayname, lineoffset)"
+   '("local loadstring = loadstring or load"
+     "function luamode_loadstring(str, displayname, lineoffset)"
      "  if lineoffset > 1 then"
      "    str = string.rep('\\n', lineoffset - 1) .. str"
      "  end"
@@ -1624,6 +1673,10 @@ This function just searches for a `end' at the beginning of a line."
           (replace-match "\\\\\\&" t)))
       (concat "'" (buffer-string) "'"))))
 
+;;;###autoload
+(defalias 'run-lua #'lua-start-process)
+
+;;;###autoload
 (defun lua-start-process (&optional name program startfile &rest switches)
   "Start a lua process named NAME, running PROGRAM.
 PROGRAM defaults to NAME, which defaults to `lua-default-application'.
@@ -1646,6 +1699,7 @@ When called interactively, switch to the process buffer."
 
     ;; enable error highlighting in stack traces
     (require 'compile)
+    (setq lua--repl-buffer-p t)
     (make-local-variable 'compilation-error-regexp-alist)
     (setq compilation-error-regexp-alist
           (cons (list lua-traceback-line-re 1 2)
@@ -1655,7 +1709,7 @@ When called interactively, switch to the process buffer."
     (compilation-shell-minor-mode 1))
 
   ;; when called interactively, switch to process buffer
-  (if (lua--called-interactively-p 'any)
+  (if (called-interactively-p 'any)
       (switch-to-buffer lua-process-buffer)))
 
 (defun lua-get-create-process ()
@@ -1668,8 +1722,8 @@ When called interactively, switch to the process buffer."
 (defun lua-kill-process ()
   "Kill Lua subprocess and its buffer."
   (interactive)
-  (if lua-process-buffer
-      (kill-buffer lua-process-buffer)))
+  (when (buffer-live-p lua-process-buffer)
+    (kill-buffer lua-process-buffer)))
 
 (defun lua-set-lua-region-start (&optional arg)
   "Set start of region for use with `lua-send-lua-region'."
@@ -1685,7 +1739,9 @@ When called interactively, switch to the process buffer."
   "Send STR plus a newline to Lua subprocess.
 
 If `lua-process' is nil or dead, start a new process first."
-  (comint-simple-send (lua-get-create-process) str))
+  (unless (string-equal (substring str -1) "\n")
+    (setq str (concat str "\n")))
+  (process-send-string (lua-get-create-process) str))
 
 (defun lua-send-current-line ()
   "Send current line to Lua subprocess, found in `lua-process'.
@@ -1738,7 +1794,9 @@ Otherwise, return START."
          (lua-file (or (buffer-file-name) (buffer-name)))
          (region-str (buffer-substring-no-properties start end))
          (command
-          (format "luamode_loadstring(%s, %s, %s)"
+          ;; Print empty line before executing the code so that the first line
+          ;; of output doesn't end up on the same line as current prompt.
+          (format "print(''); luamode_loadstring(%s, %s, %s);\n"
                   (lua-make-lua-string region-str)
                   (lua-make-lua-string lua-file)
                   lineno)))
@@ -1773,14 +1831,17 @@ Otherwise, return START."
   (lua-send-buffer))
 
 (defun lua-show-process-buffer ()
-  "Make sure `lua-process-buffer' is being displayed."
+  "Make sure `lua-process-buffer' is being displayed.
+Create a Lua process if one doesn't already exist."
   (interactive)
-  (display-buffer lua-process-buffer))
+  (display-buffer (process-buffer (lua-get-create-process))))
+
 
 (defun lua-hide-process-buffer ()
   "Delete all windows that display `lua-process-buffer'."
   (interactive)
-  (delete-windows-on lua-process-buffer))
+  (when (buffer-live-p lua-process-buffer)
+    (delete-windows-on lua-process-buffer)))
 
 (defun lua-funcname-at-point ()
   "Get current Name { '.' Name } sequence."
@@ -1792,7 +1853,8 @@ Otherwise, return START."
 (defun lua-search-documentation ()
   "Search Lua documentation for the word at the point."
   (interactive)
-  (browse-url (concat lua-search-url-prefix (lua-funcname-at-point))))
+  (let ((url (concat lua-documentation-url "#pdf-" (lua-funcname-at-point))))
+    (funcall lua-documentation-function url)))
 
 (defun lua-toggle-electric-state (&optional arg)
   "Toggle the electric indentation feature.
