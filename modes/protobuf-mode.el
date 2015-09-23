@@ -71,7 +71,8 @@
 
 ;; This mode does not inherit properties from other modes. So, we do not use 
 ;; the usual `c-add-language' function.
-(put 'protobuf-mode 'c-mode-prefix "protobuf-")
+(eval-and-compile
+  (put 'protobuf-mode 'c-mode-prefix "protobuf-"))
 
 ;; The following code uses of the `c-lang-defconst' macro define syntactic
 ;; features of protocol buffer language.  Refer to the documentation in the
@@ -186,7 +187,7 @@
   "Protocol Buffers Mode Commands"
   (cons "Protocol Buffers" (c-lang-const c-mode-menu protobuf)))
 
-(add-to-list 'auto-mode-alist '("\\.proto$" . protobuf-mode))
+;;;###autoload (add-to-list 'auto-mode-alist '("\\.proto\\'" . protobuf-mode))
 
 ;;;###autoload
 (defun protobuf-mode ()
