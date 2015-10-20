@@ -1,5 +1,8 @@
 ;; Key-bindings
 
+;; get rid of the menu bar
+(menu-bar-mode -1)
+
 ;; navigation
 (global-set-key (kbd "C-o") 'scroll-down)
 
@@ -31,6 +34,7 @@
 (setq gofmt-command "goimports")
 (require 'go-mode-autoloads)
 (add-hook 'before-save-hook #'gofmt-before-save)
+(global-set-key (kbd "C-c d") 'godoc-at-point)
 
 ;; js2-mode
 (autoload 'js2-mode "js2-mode" nil t)

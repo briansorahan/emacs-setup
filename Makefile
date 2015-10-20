@@ -1,13 +1,11 @@
 LOAD_DIR=$$HOME/emacs-setup/modes
-CUR=$$HOME/.emacs
-BAK=$$HOME/.emacs.old
+DOTEMACS=$$HOME/.emacs
 
 all:
 	cd $(LOAD_DIR) && emacs --batch -f batch-byte-compile *.el
 
-install:
-# [[ -f $(CUR) ]] && mv $(CUR) $(BAK)
-	sed "s;__LOAD_DIR__;${LOAD_DIR};" emacs.el > $(CUR)
+install: all
+	sed "s;__LOAD_DIR__;${LOAD_DIR};" emacs.el > $(DOTEMACS)
 
 clean:
 	cd $(LOAD_DIR) && rm *.elc
