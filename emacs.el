@@ -21,6 +21,16 @@
                          ("marmalade" . "http://marmalade-repo.org/packages/")
                          ("melpa" . "http://melpa.milkbox.net/packages/")))
 
+;; No bell
+(setq ring-bell-function 'ignore)
+
+;; auto-save and backup config
+(setq temporary-file-directory "~/.emacs.files/tmp/")
+(setq backup-directory-alist
+      `((".*" . , temporary-file-directory)))
+(setq auto-save-file-name-transforms
+                `((".*" , temporary-file-directory t)))
+
 ;; common lisp extensions
 (require 'cl)
 
