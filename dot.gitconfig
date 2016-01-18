@@ -1,0 +1,35 @@
+[user]
+	email = bsorahan@leaf.ag
+	name = Brian Sorahan
+[core]
+	excludesfile = /Users/briansorahan/.gitignore_global
+[alias]
+	# add
+	aa = add -A
+	# branch
+	b = branch
+	ba = branch -a
+	bd = branch -d
+	bm = branch -m
+	br = branch -r
+	bv = branch -v
+	# checkout
+	cb = checkout -b
+	co = checkout
+	com = checkout master
+	# clean
+	cf = clean -f
+	# commit
+	cm = commit -m
+	# log
+	lg = log --oneline --graph
+	# merge
+	m = merge
+	# pull
+	p = pull
+	# remote
+	rpo = remote prune origin
+	# reset
+	rhom = reset --hard origin/master
+	# status
+	s = status

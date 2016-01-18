@@ -66,6 +66,6 @@
 
 ;; additional configuration
 (setq indent-tabs-mode nil)
-(setq tab-width 4)
-(setq default-tab-width 4)
+(setq tab-width 8)
+(setq default-tab-width 8)
 (defvaralias 'c-basic-offset 'tab-width)
