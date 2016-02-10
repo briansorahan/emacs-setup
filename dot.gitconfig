@@ -31,5 +31,6 @@
 	rpo = remote prune origin
 	# reset
 	rhom = reset --hard origin/master
+	rh = reset HEAD
 	# status
 	s = status
