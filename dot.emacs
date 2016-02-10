@@ -3,6 +3,9 @@
 ;; get rid of the menu bar
 (menu-bar-mode -1)
 
+;; mouse in xterm
+(xterm-mouse-mode 1)
+
 ;; navigation
 (global-set-key (kbd "C-o") 'scroll-down)
 
@@ -64,7 +67,13 @@
 (require 'dockerfile-mode)
 (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))
 
+;; Go helper for compilation
+(setq compilation-always-kill t)
+(global-set-key (kbd "C-c C-r") 'recompile)
+(global-set-key (kbd "C-c C-k") 'kill-compilation)
+
 ;; additional configuration
+(global-set-key (kbd "C-c C-l") 'linum-mode)
 (setq indent-tabs-mode nil)
 (setq tab-width 8)
 (setq default-tab-width 8)
