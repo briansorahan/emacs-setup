@@ -43,11 +43,25 @@
 ;; protobuf
 (require 'protobuf-mode)
 
-;; go
+;; Go
 (setq gofmt-command "goimports")
 (require 'go-mode-autoloads)
 (add-hook 'before-save-hook #'gofmt-before-save)
 (global-set-key (kbd "C-c d") 'godoc-at-point)
+(setq compilation-always-kill t)
+(setq compilation-scroll-output t)
+(global-set-key (kbd "C-c C-r") 'recompile)
+(global-set-key (kbd "C-c C-k") 'kill-compilation)
+(global-set-key (kbd "C-c C-f") 'save-and-compile-program)
+(load-file "~/go/src/golang.org/x/tools/refactor/rename/go-rename.el")
+(global-set-key (kbd "C-c C-e") 'go-rename)
+
+;; save all files then run M-x compile
+(defun save-and-compile-program()
+  "Save any unsaved buffers and compile"
+  (interactive)
+  (save-some-buffers t)
+  (compile "bash -c 'go install && go build -o /tmp/a.out && /tmp/a.out'"))
 
 ;; js2-mode
 (autoload 'js2-mode "js2-mode" nil t)
@@ -66,11 +80,6 @@
 ;; dockerfile
 (require 'dockerfile-mode)
 (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))
-
-;; Go helper for compilation
-(setq compilation-always-kill t)
-(global-set-key (kbd "C-c C-r") 'recompile)
-(global-set-key (kbd "C-c C-k") 'kill-compilation)
 
 ;; additional configuration
 (global-set-key (kbd "C-c C-l") 'linum-mode)
