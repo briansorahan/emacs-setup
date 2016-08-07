@@ -21,6 +21,8 @@
 	cf = clean -f
 	# commit
 	cm = commit -m
+	# diff
+	d = diff
 	# log
 	lg = log --oneline --graph
 	# merge

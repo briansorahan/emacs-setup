@@ -2,8 +2,7 @@ LOAD_DIR=$(HOME)/dotfiles/modes
 DOTEMACS=$(HOME)/.emacs
 
 all:
-	cd $(LOAD_DIR) && emacs --batch -f batch-byte-compile *.el
-	sed "s;__LOAD_DIR__;${LOAD_DIR};" dot.emacs > $(DOTEMACS)
+	sed "s;__LOAD_DIR__;${LOAD_DIR};" dot.emacs.el > $(DOTEMACS)
 	cp dot.gitconfig ~/.gitconfig
 
 clean:
