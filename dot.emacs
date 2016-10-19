@@ -10,7 +10,7 @@
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 
 ;; Add to load-path
-(add-to-list 'load-path "/Users/briansorahan/dotfiles/modes")
+(add-to-list 'load-path "/Users/brian.sorahan/dotfiles/modes")
 
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
@@ -35,8 +35,8 @@
 (require 'cl)
 
 ;; julia
-(require 'julia-mode)
-(add-to-list 'auto-mode-alist '("\\.jl$" . julia-mode))
+;; (require 'julia-mode)
+;; (add-to-list 'auto-mode-alist '("\\.jl$" . julia-mode))
 
 ;; Go
 ;; (setq gofmt-command "goimports")
@@ -54,7 +54,7 @@
 (load-file "~/go/src/golang.org/x/tools/refactor/rename/go-rename.el")
 (global-set-key (kbd "C-c C-e") 'go-rename)
 ;; go-oracle
-(load-file "~/go/src/golang.org/x/tools/cmd/oracle/oracle.el")
+;; (load-file "~/go/src/golang.org/x/tools/cmd/oracle/oracle.el")
 
 ;; save all files then run M-x compile
 (defun save-and-compile-program()
