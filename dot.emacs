@@ -50,11 +50,6 @@
 (global-set-key (kbd "C-c C-f") 'save-and-compile-program)
 (global-set-key (kbd "C-c C-i") 'save-and-install-program)
 (global-set-key (kbd "C-c C-t") 'save-and-test-program)
-;; go-rename
-(load-file "~/go/src/golang.org/x/tools/refactor/rename/go-rename.el")
-(global-set-key (kbd "C-c C-e") 'go-rename)
-;; go-oracle
-;; (load-file "~/go/src/golang.org/x/tools/cmd/oracle/oracle.el")
 
 ;; save all files then run M-x compile
 (defun save-and-compile-program()
