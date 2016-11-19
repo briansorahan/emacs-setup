@@ -10,7 +10,7 @@
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 
 ;; Add to load-path
-(add-to-list 'load-path "/Users/brian.sorahan/dotfiles/modes")
+(add-to-list 'load-path (expand-file-name "~/dotfiles/modes"))
 
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
