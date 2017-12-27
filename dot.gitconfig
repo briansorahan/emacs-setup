@@ -36,3 +36,9 @@
 	rh = reset HEAD
 	# status
 	s = status
+[status]
+	submoduleSummary = true
+[diff]
+	submodule = log
+[pull]
+	rebase = true
