@@ -3,8 +3,8 @@ DOTEMACS=$(HOME)/.emacs
 
 all:
 	sed "s;__LOAD_DIR__;${LOAD_DIR};" dot.emacs > $(DOTEMACS)
-	cp dot.gitconfig ~/.gitconfig
-	cp dot.zshrc ~/.zshrc
+	install --backup --suffix .bak dot.gitconfig $(HOME)/.gitconfig
+	install --backup --suffix .bak dot.zshrc     $(HOME)/.zshrc
 	cp dot.tmux.conf ~/.tmux.conf
 
 clean:
