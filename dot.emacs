@@ -12,6 +12,14 @@
 ;; Add to load-path
 (add-to-list 'load-path (expand-file-name "~/dotfiles/modes"))
 
+;; jump to definition for C++
+(require 'dumb-jump)
+(defun c++-jump-hook ()
+  (global-set-key (kbd "C-c C-j") 'dumb-jump-go)
+  (global-set-key (kbd "M-*") 'dumb-jump-back)
+  )
+(add-hook 'c++-mode-hook 'c++-jump-hook)
+
 ;; tcl mode for expect
 (add-to-list 'auto-mode-alist '(".exp$" . tcl-mode))
 (add-to-list 'interpreter-mode-alist '("expect" . tcl-mode))
