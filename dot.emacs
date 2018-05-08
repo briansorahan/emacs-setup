@@ -12,6 +12,12 @@
 ;; Add to load-path
 (add-to-list 'load-path (expand-file-name "~/dotfiles/modes"))
 
+;; cucumber feature mode
+(add-to-list 'auto-mode-alist '("\.feature$" . feature-mode))
+
+;; Files that begin with Makefile should use makefile-mode
+(add-to-list 'auto-mode-alist '("Makefile.*\\'" . makefile-mode))
+
 ;; jump to definition for C++
 (require 'dumb-jump)
 (defun c++-jump-hook ()
