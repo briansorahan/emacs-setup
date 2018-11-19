@@ -1,9 +1,9 @@
-# emacs-setup
+# dotfiles
 
-Set up emacs the way I like it.
+Personal configuration.
 
 ## Install
 
-    $ git clone git://github.com/briansorahan/emacs-setup.git
-    $ cd emacs-setup
+    $ git clone https://github.com/briansorahan/dotfiles.git
+    $ cd dotfiles
     $ make install
